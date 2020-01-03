@@ -29,8 +29,7 @@ set( THIRD_PARTY_LIBS
 )
 ############### dependencies ######################
 include_directories( ${PROJECT_SOURCE_DIR}/include )
-add_subdirectory( src )
-add_subdirectory( demo )    
+add_subdirectory( src )   
 
 ###############    ZED denpencies   #########################
 SET(execName ZED_Depth_Sensing)
@@ -63,13 +62,16 @@ ENDIF()
 
 find_package(CUDA ${ZED_CUDA_VERSION} EXACT REQUIRED)
 #向工程添加特定的头文件搜索路径
-include_directories(${ZED_INCLUDE_DIRS})
+include_directories("${ZED_INCLUDE_DIRS}")
+
+message(${ZED_INCLUDE_DIRS})
 include_directories(${GLEW_INCLUDE_DIRS})
 include_directories(${GLUT_INCLUDE_PATH})
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 #添加非标准的共享库搜索路径
 link_directories(${ZED_LIBRARY_DIR})
+message("${ZED_LIBRARY_DIR}")
 link_directories(${GLEW_LIBRARY_DIRS})
 link_directories(${GLUT_LIBRARY_DIRS})
 link_directories(${OpenGL_LIBRARY_DIRS})
@@ -96,3 +98,6 @@ TARGET_LINK_LIBRARIES(${execName}
                         ${GLUT_LIBRARY}
                         ${GLEW_LIBRARY}
 		        ${Sophus_LIBRARIES} )
+
+add_executable( demov1 demov1.cpp )
+target_link_libraries( demov1 ownslam )

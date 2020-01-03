@@ -19,18 +19,15 @@
 
 #include "ownslam/frame.h"
 
-
-
 namespace ownslam
 {
-using sl::Mat;
 Frame::Frame()
 : id_(-1), time_stamp_(-1), camera_(nullptr), is_key_frame_(false)
 {
 
 }
 
-Frame::Frame ( long id, double time_stamp, SE3 T_c_w, Camera::Ptr camera,Mat color, Mat depth )
+Frame::Frame ( long id, double time_stamp, SE3 T_c_w, Camera::Ptr camera, Mat color, Mat depth )
 : id_(id), time_stamp_(time_stamp), T_c_w_(T_c_w), camera_(camera), color_(color), depth_(depth), is_key_frame_(false)
 {
 
@@ -51,21 +48,19 @@ double Frame::findDepth ( const cv::KeyPoint& kp )
 {
     int x = cvRound(kp.pt.x);
     int y = cvRound(kp.pt.y);
-    float d = 0;
-    depth_.getValue(y,x,&d);
+    ushort d = depth_.ptr<ushort>(y)[x];
     if ( d!=0 )
     {
         return double(d)/camera_->depth_scale_;
     }
-    else
+    else 
     {
-        // check the nearby points
+        // check the nearby points 
         int dx[4] = {-1,0,1,0};
         int dy[4] = {0,-1,0,1};
         for ( int i=0; i<4; i++ )
         {
-            float d = 0;
-            depth_.getValue(y+dy[i],x+dx[i],&d);            
+            d = depth_.ptr<ushort>( y+dy[i] )[x+dx[i]];
             if ( d!=0 )
             {
                 return double(d)/camera_->depth_scale_;
@@ -93,9 +88,9 @@ bool Frame::isInFrame ( const Vector3d& pt_world )
     if ( p_cam(2,0)<0 ) return false;
     Vector2d pixel = camera_->world2pixel( pt_world, T_c_w_ );
     // cout<<"P_pixel = "<<pixel.transpose()<<endl<<endl;
-    return pixel(0,0)>0 && pixel(1,0)>0
-        && pixel(0,0)<color_.height
-        && pixel(1,0)<color_.width;
+    return pixel(0,0)>0 && pixel(1,0)>0 
+        && pixel(0,0)<color_.cols 
+        && pixel(1,0)<color_.rows;
 }
 
 }

@@ -22,10 +22,9 @@
 
 #include "ownslam/common_include.h"
 #include "ownslam/camera.h"
-#include <sl/Camera.hpp>
 namespace ownslam
 {
-using sl::Mat; 
+//using sl::Mat; 
 // forward declare
 class MapPoint;
 class Frame
