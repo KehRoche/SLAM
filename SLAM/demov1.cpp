@@ -10,7 +10,9 @@
 //#include <oepncv2/opencv.hpp>
 #include "sl/Camera.hpp"
 
-using namespace sl::InitParameters;
+//using namespace sl::InitParameters;
+
+cv::Mat slMat2cvMat(Mat& input);
 
 int main ( int argc, char** argv )
 {
@@ -24,10 +26,10 @@ int main ( int argc, char** argv )
     ownslam::VisualOdometry::Ptr vo ( new ownslam::VisualOdometry );
     sl::Camera zed;
     sl::InitParameters initParameters;
-    initParameters.depth_mode = DEPTH_MODE_ULTRA;
-    initParameters.coordinate_system = COORDINATE_SYSTEM_RIGHT_HANDED_Y_UP;
-    init_params.camera_resolution = RESOLUTION_HD1080;
-    init_params.camera_fps = 30;
+    initParameters.depth_mode = sl::DEPTH_MODE_ULTRA;
+    initParameters.coordinate_system = sl::COORDINATE_SYSTEM_RIGHT_HANDED_Y_UP;
+    initParameters.camera_resolution =sl:: RESOLUTION_HD1080;
+    initParameters.camera_fps = 30;
     
 
     string dataset_dir = ownslam::Config::get<string> ( "dataset_dir" );
@@ -41,7 +43,12 @@ int main ( int argc, char** argv )
 
     vector<Mat> rgb_files, depth_files;
 
-    cv::VideoCapture capture(0);//初始化USB通道1的摄像头
+    sl::ERROR_CODE err = zed.open(initParameters);
+    if (err != sl::SUCCESS)
+        exit(-1);
+
+    sl::RuntimeParameters runtime_parameters;
+    runtime_parameters.sensing_mode = sl::SENSING_MODE_STANDARD; // Use STANDARD sensing mode
 
     ownslam::Camera::Ptr camera ( new ownslam::Camera );
 
@@ -62,22 +69,23 @@ int main ( int argc, char** argv )
               Mat color = originalframe.clone();
           }
       } */
-        sl::Mat depth;
-        sl::Mat color;
-        if (zed.grab() == SUCCESS) 
+        sl::Mat Depth;
+        sl::Mat Color;
+        if (zed.grab() == sl::SUCCESS) 
         {
           // A new image and depth is available if grab() returns SUCCESS
-          zed.retrieveImage(color, VIEW_LEFT); // Retrieve left image
-          zed.retrieveMeasure(depth, MEASURE_DEPTH); // Retrieve depth
+          zed.retrieveImage(Color, sl::VIEW_LEFT); // Retrieve left image
+          zed.retrieveMeasure(Depth, sl::MEASURE_DEPTH); // Retrieve depth
         }
        
        cout<<"****** loop "<<i<<" ******"<<endl;
+       
+       cv::Mat color =slMat2cvMat(Depth);
+       cv::Mat depth =slMat2cvMat(Color);
        if ( color.data==nullptr || depth.data==nullptr )
            break;
        ownslam::Frame::Ptr pFrame = ownslam::Frame::createFrame();
        pFrame->camera_ = camera;
-       cv::Mat color = s1Mat2cvMat(color);
-       cv::Mat depth = s1Mat2cvMat(depth);
        pFrame->color_ = color;
        pFrame->depth_ = depth;
        //pFrame->time_stamp_ = rgb_times[i];
@@ -100,11 +108,16 @@ int main ( int argc, char** argv )
 
        cv::imshow ( "image", img_show );
        cv::waitKey ( 1 );
-       Mat originalframe;
-       capture>>originalframe;
-       cv::imshow("camera test",originalframe);
-       cout<<endl;
    }
 
     return 0;
+}
+cv::Mat slMat2cvMat(const sl::Mat& input) {
+    // Mapping between MAT_TYPE and CV_TYPE
+    int cv_type = -1;
+
+
+    // Since cv::Mat data requires a uchar* pointer, we get the uchar1 pointer from sl::Mat (getPtr<T>())
+    // cv::Mat and sl::Mat will share a single memory structure
+    return cv::Mat(input.getHeight(), input.getWidth(), cv_type, input.getPtr<sl::uchar1>(sl::MEM_CPU));
 }
