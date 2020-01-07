@@ -12,7 +12,7 @@
 
 //using namespace sl::InitParameters;
 
-cv::Mat slMat2cvMat(Mat& input);
+cv::Mat slMat2cvMat(const sl::Mat& input);
 
 int main ( int argc, char** argv )
 {
@@ -32,26 +32,31 @@ int main ( int argc, char** argv )
     initParameters.camera_fps = 30;
     
 
-    string dataset_dir = ownslam::Config::get<string> ( "dataset_dir" );
-    cout<<"dataset: "<<dataset_dir<<endl;
-    ifstream fin ( dataset_dir+"/associate.txt" );
-    if ( !fin )
-    {
-        cout<<"please generate the associate file called associate.txt!"<<endl;
-        return 1;
-    }
 
     vector<Mat> rgb_files, depth_files;
 
     sl::ERROR_CODE err = zed.open(initParameters);
     if (err != sl::SUCCESS)
-        exit(-1);
+{        
+	cout<<"camera open failed"<<endl	
+	exit(-1);
+}
 
     sl::RuntimeParameters runtime_parameters;
     runtime_parameters.sensing_mode = sl::SENSING_MODE_STANDARD; // Use STANDARD sensing mode
 
     ownslam::Camera::Ptr camera ( new ownslam::Camera );
+    
+    
+    sl::Resolution image_size = zed.getResolution();
+    int new_width = image_size.width / 2;
+    int new_height = image_size.height / 2;
 
+    // To share data between sl::Mat and cv::Mat, use slMat2cvMat()
+    // Only the headers and pointer to the sl::Mat are copied, not the data itself
+    sl::Mat Depth(new_width, new_height, sl::MAT_TYPE_8U_C4);
+    sl::Mat Color(new_width, new_height,sl::MAT_TYPE_8U_C4);
+  
    for ( int i=0; i<rgb_files.size(); i++ )
    {
       
@@ -69,8 +74,7 @@ int main ( int argc, char** argv )
               Mat color = originalframe.clone();
           }
       } */
-        sl::Mat Depth;
-        sl::Mat Color;
+
         if (zed.grab() == sl::SUCCESS) 
         {
           // A new image and depth is available if grab() returns SUCCESS
@@ -80,8 +84,8 @@ int main ( int argc, char** argv )
        
        cout<<"****** loop "<<i<<" ******"<<endl;
        
-       cv::Mat color =slMat2cvMat(Depth);
-       cv::Mat depth =slMat2cvMat(Color);
+       cv::Mat color =slMat2cvMat(Color);
+       cv::Mat depth =slMat2cvMat(Depth);
        if ( color.data==nullptr || depth.data==nullptr )
            break;
        ownslam::Frame::Ptr pFrame = ownslam::Frame::createFrame();
@@ -114,7 +118,7 @@ int main ( int argc, char** argv )
 }
 cv::Mat slMat2cvMat(const sl::Mat& input) {
     // Mapping between MAT_TYPE and CV_TYPE
-    int cv_type = -1;
+    int cv_type = CV_8UC4;
 
 
     // Since cv::Mat data requires a uchar* pointer, we get the uchar1 pointer from sl::Mat (getPtr<T>())
