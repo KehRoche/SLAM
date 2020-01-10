@@ -32,14 +32,14 @@ int main ( int argc, char** argv )
     initParameters.camera_fps = 30;
     
 
-
     vector<Mat> rgb_files, depth_files;
 
     sl::ERROR_CODE err = zed.open(initParameters);
-    if (err != sl::SUCCESS)
+    while (err != sl::SUCCESS)
 {        
-	cout<<"camera open failed"<<endl	
-	exit(-1);
+	cout<<"camera open failed"<<endl;	
+	sleep(2);
+        err = zed.open(initParameters);
 }
 
     sl::RuntimeParameters runtime_parameters;
@@ -56,24 +56,10 @@ int main ( int argc, char** argv )
     // Only the headers and pointer to the sl::Mat are copied, not the data itself
     sl::Mat Depth(new_width, new_height, sl::MAT_TYPE_8U_C4);
     sl::Mat Color(new_width, new_height,sl::MAT_TYPE_8U_C4);
-  
-   for ( int i=0; i<rgb_files.size(); i++ )
+  cout<<"camera open successed"<<endl;
+   for ( int i=0; i<50; i++ )
    {
       
-
- /*       while(1)
-      {
-          Mat originalframe;
-          capture>>originalframe;
-          if(originalframe.empty())
-          {
-              break;
-          }
-          else
-          {
-              Mat color = originalframe.clone();
-          }
-      } */
 
         if (zed.grab() == sl::SUCCESS) 
         {
