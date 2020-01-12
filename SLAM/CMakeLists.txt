@@ -8,15 +8,13 @@ set( CMAKE_CXX_FLAGS "-std=c++11 -march=native -O3" )
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules )
 set( EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build )
 set( LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib )
-set(OpenCV_DIR /usr/local/share/OpenCV)
+#set(OpenCV_DIR /usr/local/share/OpenCV)
 ############### dependencies ######################
 # Eigen
 include_directories( "/usr/include/eigen3" )
 # OpenCV
 find_package( OpenCV 3.1 REQUIRED )
-include_directories(${OpenCV_INCLUDE_DIRS}
-  ./include
-)
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 message(${OpenCV_INCLUDE_DIRS})
 # Sophus 
