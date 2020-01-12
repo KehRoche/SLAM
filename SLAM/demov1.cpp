@@ -32,7 +32,10 @@ int main ( int argc, char** argv )
     initParameters.camera_fps = 30;
     
 
-    vector<Mat> rgb_files, depth_files;
+
+
+
+  
 
     sl::ERROR_CODE err = zed.open(initParameters);
     while (err != sl::SUCCESS)
@@ -41,6 +44,14 @@ int main ( int argc, char** argv )
 	sleep(2);
         err = zed.open(initParameters);
 }
+
+   	    sl::CalibrationParameters calibration_params = zed.getCameraInformation().calibration_parameters;
+    float focal_left_x = calibration_params.left_cam.fx;
+    float focal_left_y = calibration_params.left_cam.fy;
+    float points_left_x = calibration_params.left_cam.cx;
+    float points_left_y = calibration_params.left_cam.cy;
+    cout<<focal_left_x<<endl<<focal_left_y<<endl<<points_left_x<<endl<<points_left_y<<endl;    
+
 
     sl::RuntimeParameters runtime_parameters;
     runtime_parameters.sensing_mode = sl::SENSING_MODE_STANDARD; // Use STANDARD sensing mode
@@ -69,7 +80,7 @@ int main ( int argc, char** argv )
     sl::Mat Depth(new_width, new_height, sl::MAT_TYPE_8U_C4);
     sl::Mat Color(new_width, new_height,sl::MAT_TYPE_8U_C4);
   cout<<"camera open successed"<<endl;
-   for ( int i=0; i<50; i++ )
+   for ( int i=0; i<200; i++ )
    {
       
 
@@ -119,8 +130,8 @@ int main ( int argc, char** argv )
            cv::circle ( img_show, cv::Point2f ( pixel ( 0,0 ),pixel ( 1,0 ) ), 5, cv::Scalar ( 0,255,0 ), 2 );
        }
 
-       cv::imshow ( "image", img_show );
-       cv::waitKey ( 1 );
+       //cv::imshow ( "image", img_show );
+       //cv::waitKey ( 1 );
 	vis.setWidgetPose ( "Camera", M );
         vis.spinOnce ( 1, false );
         cout<<endl;
