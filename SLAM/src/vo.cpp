@@ -171,10 +171,20 @@ void VisualOdometry::poseEstimationPnP()
                        );
 
     // using bundle adjustment to optimize the pose
-    typedef g2o::BlockSolver<g2o::BlockSolverTraits<6,2>> Block;
-    Block::LinearSolverType* linearSolver = new g2o::LinearSolverDense<Block::PoseMatrixType>();
-    Block* solver_ptr = new Block ( linearSolver );
+    //稀疏矩阵块求解器 待优化变量为李群9维，误差项维度为3
+    typedef g2o::BlockSolver<g2o::BlockSolverTraits<8,3>> BalBlockSolver;
+
+    //初始化线性求解器 稀疏schur，采用cholmod分解H
+    g2o::LinearSolver<BalBlockSolver::PoseMatrixType>* linearSolver = 0;
+    linearSolver = new g2o::LinearSolverCholmod<BalBlockSolver::PoseMatrixType>();
+    dynamic_cast<g2o::LinearSolverCholmod<BalBlockSolver::PoseMatrixType>* >(linearSolver)->setBlockOrdering(true);  // AMD ordering , only needed for sparse cholesky solver
+    
+    //初始化块求解器
+    BalBlockSolver* solver_ptr = new Block ( linearSolver );
+    
+    //采用拉温伯格梯度下降算法
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg ( solver_ptr );
+    //实例化一个稀疏图
     g2o::SparseOptimizer optimizer;
     optimizer.setAlgorithm ( solver );
 
