@@ -10,6 +10,9 @@
 //#include <oepncv2/opencv.hpp>
 #include "sl/Camera.hpp"
 
+
+#include <octomap/octomap.h>    // for octomap 
+
 //using namespace sl::InitParameters;
 
 cv::Mat slMat2cvMat(const sl::Mat& input);
@@ -32,12 +35,7 @@ int main ( int argc, char** argv )
     initParameters.camera_fps = 30;
     
 
-
-
-
-  
-
-    sl::ERROR_CODE err = zed.open(initParameters);
+  sl::ERROR_CODE err = zed.open(initParameters);
     while (err != sl::SUCCESS)
 {        
 	cout<<"camera open failed"<<endl;	
@@ -80,6 +78,8 @@ int main ( int argc, char** argv )
     sl::Mat Depth(new_width, new_height, sl::MAT_TYPE_8U_C4);
     sl::Mat Color(new_width, new_height,sl::MAT_TYPE_8U_C4);
   cout<<"camera open successed"<<endl;
+  
+  octomap::OcTree tree( 0.05 ); 
    for ( int i=0; i<200; i++ )
    {
       
@@ -110,6 +110,25 @@ int main ( int argc, char** argv )
        if ( vo->state_ == ownslam::VisualOdometry::LOST )
            break;
        SE3 Twc = pFrame->T_c_w_.inverse();
+        
+        octomap::Pointcloud cloud;  // the point cloud in octomap         for ( int v=0; v<color.rows; v++ )
+        for ( int v=0; v<color.rows; v++ )  
+        {
+            for ( int u=0; u<color.cols; u++ )
+            {
+                unsigned int d = depth.ptr<unsigned short> ( v )[u]; // 深度值
+                if ( d==0 ) continue; // 为0表示没有测量到
+                if ( d >= 7000 ) continue; // 深度太大时不稳定，去掉
+                Eigen::Vector3d point; 
+                point[2] = double(d)/camera.depth_scale; 
+                point[0] = (u-points_left_x)*point[2]/focal_left_x;
+                point[1] = (v-points_left_y)*point[2]/focal_left_y; 
+                Eigen::Vector3d pointWorld = Twc*point;
+                // 将世界坐标系的点放入点云
+                cloud.push_back( pointWorld[0], pointWorld[1], pointWorld[2] ); 
+            }
+        }    
+            tree.insertPointCloud( cloud, octomap::point3d( Twc(0,3), Twc(1,3), T_c_w_(2,3) ) );     
 
         cv::Affine3d M (
             cv::Affine3d::Mat3 (
@@ -137,6 +156,9 @@ int main ( int argc, char** argv )
         cout<<endl;
    }
 
+    tree.updateInnerOccupancy();
+    cout<<"saving octomap ... "<<endl;
+    tree.writeBinary( "octomap.bt" );
     return 0;
 }
 cv::Mat slMat2cvMat(const sl::Mat& input) {

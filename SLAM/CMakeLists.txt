@@ -29,6 +29,11 @@ set( THIRD_PARTY_LIBS
     ${Sophus_LIBRARIES}
     g2o_core g2o_stuff g2o_types_sba
 )
+
+# octomap 
+find_package( octomap REQUIRED )
+include_directories( ${OCTOMAP_INCLUDE_DIRS} )
+
 ############### dependencies ######################
 include_directories( ${PROJECT_SOURCE_DIR}/include )
 add_subdirectory( src )   
